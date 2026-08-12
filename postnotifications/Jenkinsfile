@@ -1,0 +1,60 @@
+<![CDATA[
+// Source: https://github.com/jenkinsci/pipeline-examples (MIT License)
+// Test case: Post conditions and notifications
+pipeline {
+  agent any
+
+  stages {
+    stage("Build") {
+      steps {
+        echo "Building..."
+        sh 'echo "Build step"'
+      }
+      post {
+        always {
+          echo "Stage Build finished"
+        }
+        success {
+          echo "Stage Build was successful"
+        }
+        failure {
+          echo "Stage Build failed"
+        }
+      }
+    }
+    stage("Deploy") {
+      steps {
+        echo "Deploying..."
+        script {
+          if (env.FORCE_FAILURE == 'true') {
+            currentBuild.result = "FAILURE"
+            error("Forced failure for testing")
+          }
+        }
+      }
+    }
+  }
+  
+  post {
+    always {
+      echo "Pipeline finished"
+      cleanWs()
+    }
+    success {
+      echo "Pipeline succeeded"
+      mail to: 'team@example.com',
+           subject: "✅ Build Success: ${currentBuild.fullDisplayName}",
+           body: "Build completed successfully: ${env.BUILD_URL}"
+    }
+    failure {
+      echo "Pipeline failed"
+      mail to: 'team@example.com',
+           subject: "❌ Build Failed: ${currentBuild.fullDisplayName}",
+           body: "Build failed: ${env.BUILD_URL}"
+    }
+    unstable {
+      echo "Pipeline is unstable"
+    }
+  }
+}
+    ]]>
